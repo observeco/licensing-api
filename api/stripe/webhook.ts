@@ -2,7 +2,7 @@
 import { supabase, generateLicenseKey, STRIPE_WEBHOOK_SECRET, errorResponse, successResponse } from '../../lib/supabase'
 
 export const config = {
-  runtime: 'nodejs18.x',
+  runtime: 'nodejs',
 }
 
 export default async function handler(req: Request) {
