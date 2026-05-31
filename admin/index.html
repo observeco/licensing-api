@@ -461,6 +461,7 @@ tbody tr:last-child td {
   margin-top: 10px;
   min-height: 1.2em;
 }
+.hidden { display: none !important; }
 
 /* ── Modal ── */
 .modal-overlay {
@@ -585,7 +586,10 @@ tbody tr:last-child td {
         <div class="header-icon">🛡️</div>
         <h1>License CRM <span>ObserveCo</span></h1>
       </div>
-      <button class="btn btn-green" onclick="openModal()">+ Issue Free License</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost" onclick="refresh()" title="Refresh">↻</button>
+        <button class="btn btn-green" onclick="openModal()">+ Issue Free License</button>
+      </div>
     </div>
 
     <div class="stats" id="stats"></div>
@@ -692,15 +696,26 @@ async function api(path, options = {}) {
   return res.json();
 }
 
+function refresh() {
+  document.getElementById('stats').innerHTML = '';
+  document.getElementById('licenseTable').innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></td></tr>';
+  loadData();
+}
+
 async function loadData() {
-  const [stats, licData] = await Promise.all([
-    api('/api/admin/stats'),
-    api('/api/admin/licenses'),
-  ]);
-  if (!stats || !licData) return;
-  licenses = licData;
-  renderStats(stats);
-  renderTable();
+  try {
+    const [stats, licData] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/licenses'),
+    ]);
+    if (!stats || !licData) return;
+    licenses = licData;
+    renderStats(stats);
+    renderTable();
+  } catch (e) {
+    console.error('loadData failed:', e);
+    document.getElementById('licenseTable').innerHTML = '<tr><td colspan="7" class="empty"><div class="empty-icon">⚠️</div><p>Failed to load licenses. Check console.</p></td></tr>';
+  }
 }
 
 function renderStats(s) {
