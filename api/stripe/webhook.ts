@@ -1,5 +1,5 @@
 // POST /api/stripe/webhook — Stripe checkout.session.completed → upsert license
-import { supabase, generateLicenseKey, STRIPE_WEBHOOK_SECRET, errorResponse, successResponse } from '../../lib/supabase'
+import { supabase, generateLicenseKey, STRIPE_WEBHOOK_SECRET, errorResponse, successResponse } from '../lib/supabase'
 
 export const config = {
   runtime: 'nodejs',
