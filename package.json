@@ -1,0 +1,12 @@
+{
+  "name": "licensing-api",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "stripe": "^17.6.0"
+  }
+}

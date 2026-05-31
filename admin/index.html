@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ObserveCo Licensing Admin</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+    --text: #f1f5f9; --text2: #94a3b8; --accent: #3b82f6;
+    --green: #22c55e; --yellow: #eab308; --red: #ef4444; --gray: #6b7280;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
+  }
+  h1 { font-size: 1.5rem; font-weight: 600; }
+  h1 span { color: var(--accent); }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface); border-radius: var(--radius); padding: 12px 20px;
+    min-width: 100px; text-align: center;
+  }
+  .stat-card .num { font-size: 1.8rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; }
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+  }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filters button {
+    padding: 6px 14px; border: 1px solid var(--surface2); border-radius: 20px;
+    background: transparent; color: var(--text2); cursor: pointer; font-size: 0.85rem;
+  }
+  .filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn {
+    padding: 8px 18px; border: none; border-radius: var(--radius);
+    cursor: pointer; font-size: 0.9rem; font-weight: 500;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-small { padding: 4px 10px; font-size: 0.8rem; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow: hidden; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 0.85rem; }
+  th { background: var(--surface2); color: var(--text2); font-weight: 500; text-transform: uppercase; font-size: 0.75rem; }
+  td { border-bottom: 1px solid var(--surface2); }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+  .status-active { background: rgba(34,197,94,0.15); color: var(--green); }
+  .status-trialing { background: rgba(234,179,8,0.15); color: var(--yellow); }
+  .status-expired { background: rgba(239,68,68,0.15); color: var(--red); }
+  .status-cancelled { background: rgba(107,114,128,0.15); color: var(--gray); }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; background: var(--surface2); }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    justify-content: center; align-items: center; z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius); padding: 24px;
+    width: 90%; max-width: 480px;
+  }
+  .modal h2 { margin-bottom: 16px; font-size: 1.1rem; }
+  .modal label { display: block; margin-bottom: 4px; font-size: 0.85rem; color: var(--text2); }
+  .modal input, .modal select {
+    width: 100%; padding: 8px 12px; margin-bottom: 12px;
+    background: var(--bg); border: 1px solid var(--surface2); border-radius: 4px;
+    color: var(--text); font-size: 0.9rem;
+  }
+  .modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .modal .btn-secondary { background: var(--surface2); color: var(--text); }
+  .empty { text-align: center; padding: 40px; color: var(--text2); }
+  .login-screen {
+    display: flex; justify-content: center; align-items: center;
+    min-height: 60vh; flex-direction: column; gap: 16px;
+  }
+  .login-screen input { padding: 10px 16px; width: 300px; background: var(--surface); border: 1px solid var(--surface2); border-radius: var(--radius); color: var(--text); font-size: 1rem; }
+  .hidden { display: none; }
+  .key-cell { font-family: monospace; font-size: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 768px) {
+    table { font-size: 0.75rem; }
+    th, td { padding: 6px 8px; }
+    .key-cell { max-width: 100px; }
+    .stats .stat-card { min-width: 80px; padding: 8px 12px; }
+    .stat-card .num { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+<div id="login" class="login-screen">
+  <h1>🔑 <span>ObserveCo</span> Licensing</h1>
+  <p style="color:var(--text2);font-size:0.85rem">Enter admin API key to continue</p>
+  <input type="password" id="apiKeyInput" placeholder="Admin API Key" onkeydown="if(event.key==='Enter')login()">
+  <button class="btn btn-primary" onclick="login()">Unlock</button>
+  <p id="loginError" style="color:var(--red);font-size:0.8rem;display:none">Invalid key</p>
+</div>
+
+<div id="app" class="hidden">
+  <div class="header">
+    <h1>🛡️ <span>ObserveCo</span> Licenses</h1>
+    <button class="btn btn-primary" onclick="openModal()">+ Issue Free License</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <div class="filters" id="filters">
+      <button class="active" data-filter="all" onclick="setFilter('all',this)">All</button>
+      <button data-filter="active" onclick="setFilter('active',this)">Active</button>
+      <button data-filter="trialing" onclick="setFilter('trialing',this)">Trial</button>
+      <button data-filter="expired" onclick="setFilter('expired',this)">Expired</button>
+    </div>
+    <span id="licenseCount" style="color:var(--text2);font-size:0.85rem"></span>
+  </div>
+
+  <div id="tableContainer">
+    <table>
+      <thead><tr>
+        <th>Email</th><th>Name</th><th>Product</th><th>Status</th><th>Issued</th><th>Created</th><th>Key</th>
+      </tr></thead>
+      <tbody id="licenseTable"></tbody>
+    </table>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>Issue Free License</h2>
+      <label>Email *</label>
+      <input type="email" id="modalEmail" placeholder="user@example.com">
+      <label>Name</label>
+      <input type="text" id="modalName" placeholder="Display name">
+      <label>Duration</label>
+      <select id="modalDuration">
+        <option value="30">30 days</option>
+        <option value="365" selected>1 year</option>
+        <option value="730">2 years</option>
+        <option value="36500">Lifetime</option>
+      </select>
+      <label>Product</label>
+      <select id="modalProduct">
+        <option value="solo">Solo ($9/mo)</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="issueLicense()">Create License</button>
+      </div>
+      <p id="modalResult" style="margin-top:12px;font-size:0.85rem;color:var(--green);display:none"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '';
+let apiKey = localStorage.getItem('observeco_admin_key') || '';
+let licenses = [];
+let currentFilter = 'all';
+
+function login() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  apiKey = key;
+  localStorage.setItem('observeco_admin_key', key);
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  loadData();
+}
+
+function checkLogin() {
+  if (apiKey) {
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    loadData();
+  }
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('observeco_admin_key');
+    apiKey = '';
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+    document.getElementById('loginError').style.display = 'block';
+    return null;
+  }
+  return res.json();
+}
+
+async function loadData() {
+  const [stats, licData] = await Promise.all([
+    api('/api/admin/stats'),
+    api('/api/admin/licenses'),
+  ]);
+  if (!stats || !licData) return;
+  licenses = licData;
+  renderStats(stats);
+  renderTable();
+}
+
+function renderStats(s) {
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="num" style="color:var(--accent)">${s.total}</div><div class="label">Total</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--green)">${s.active}</div><div class="label">Active</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--yellow)">${s.trialing}</div><div class="label">Trial</div></div>
+    <div class="stat-card"><div class="num" style="color:var(--red)">${s.expired}</div><div class="label">Expired</div></div>
+  `;
+}
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('#filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const filtered = currentFilter === 'all'
+    ? licenses
+    : licenses.filter(l => l.status === currentFilter);
+  document.getElementById('licenseCount').textContent = `${filtered.length} license${filtered.length !== 1 ? 's' : ''}`;
+  const tbody = document.getElementById('licenseTable');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No licenses found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(l => `
+    <tr>
+      <td>${esc(l.email)}</td>
+      <td>${esc(l.name || '-')}</td>
+      <td><span class="badge">${esc(l.product_slug)}</span></td>
+      <td><span class="status status-${l.status}">${l.status}</span></td>
+      <td><span class="badge">${l.issued_by}</span></td>
+      <td>${formatDate(l.created_at)}</td>
+      <td class="key-cell" title="${esc(l.license_key)}">${esc(l.license_key?.slice(0,8))}...</td>
+    </tr>
+  `).join('');
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalResult').style.display = 'none';
+  document.getElementById('modalEmail').value = '';
+  document.getElementById('modalName').value = '';
+  document.getElementById('modalEmail').focus();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+async function issueLicense() {
+  const email = document.getElementById('modalEmail').value.trim();
+  if (!email) { alert('Email is required'); return; }
+  const body = {
+    email,
+    name: document.getElementById('modalName').value.trim(),
+    product_slug: document.getElementById('modalProduct').value,
+    expires_in_days: parseInt(document.getElementById('modalDuration').value),
+  };
+  const result = await api('/api/admin/licenses', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  if (!result) return;
+  document.getElementById('modalResult').textContent =
+    `✅ License created: ${result.license_key.slice(0,8)}... for ${result.email}`;
+  document.getElementById('modalResult').style.display = 'block';
+  await loadData();
+  setTimeout(() => document.getElementById('modalResult').style.display = 'none', 5000);
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('en-SG', { month:'short', day:'numeric' }) : '-'; }
+
+checkLogin();
+</script>
+</body>
+</html>
